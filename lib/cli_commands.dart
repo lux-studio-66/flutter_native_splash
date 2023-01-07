@@ -38,6 +38,9 @@ void createSplash({
   }
 
   final config = getConfig(configFile: path, flavor: flavor);
+  // It is important that the flavor setup occurs as soon as possible.
+  // So before we generate anything, we need to setup the flavor (even if it's the default one).
+  _flavorHelper = _FlavorHelper(config[_Parameter.appModule] ?? '', flavor);
   createSplashByConfig(config);
 }
 
@@ -148,7 +151,13 @@ void createSplashByConfig(Map<String, dynamic> config) {
 
   if (!config.containsKey(_Parameter.android) ||
       config[_Parameter.android] as bool) {
-    if (Directory('android').existsSync()) {
+    bool folderAndroidExist;
+    if (config.containsKey(_Parameter.appModule)) {
+      folderAndroidExist = Directory('../${config[_Parameter.appModule]}/android').existsSync();
+    } else {
+      folderAndroidExist = Directory('android').existsSync();
+    }
+    if (folderAndroidExist) {
       _createAndroidSplash(
         imagePath: imageAndroid ?? image,
         darkImagePath: darkImageAndroid ?? darkImage,
@@ -179,7 +188,13 @@ void createSplashByConfig(Map<String, dynamic> config) {
   }
 
   if (!config.containsKey(_Parameter.ios) || config[_Parameter.ios] as bool) {
-    if (Directory('ios').existsSync()) {
+    bool folderIOSExist;
+    if (config.containsKey(_Parameter.appModule)) {
+      folderIOSExist = Directory('../${config[_Parameter.appModule]}/ios').existsSync();
+    } else {
+      folderIOSExist = Directory('ios').existsSync();
+    }
+    if (folderIOSExist) {
       _createiOSSplash(
         imagePath: imageIos ?? image,
         darkImagePath: darkImageIos ?? darkImage,
@@ -245,7 +260,9 @@ void removeSplash({
 }) {
   print("Restoring Flutter's default native splash screen...");
   final config = getConfig(configFile: path, flavor: flavor);
-
+  // It is important that the flavor setup occurs as soon as possible.
+  // So before we generate anything, we need to setup the flavor (even if it's the default one).
+  _flavorHelper = _FlavorHelper(config[_Parameter.appModule] ?? '', flavor);
   final removeConfig = <String, dynamic>{
     _Parameter.color: '#ffffff',
     _Parameter.darkColor: '#000000'
@@ -334,9 +351,6 @@ Map<String, dynamic> getConfig({
   required String? configFile,
   required String? flavor,
 }) {
-  // It is important that the flavor setup occurs as soon as possible.
-  // So before we generate anything, we need to setup the flavor (even if it's the default one).
-  _flavorHelper = _FlavorHelper(flavor);
   // if `flutter_native_splash.yaml` exists use it as config file, otherwise use `pubspec.yaml`
   String filePath;
   if (configFile != null) {
@@ -346,8 +360,8 @@ Map<String, dynamic> getConfig({
       print('The config file `$configFile` was not found.');
       exit(1);
     }
-  } else if (_flavorHelper.flavor != null) {
-    filePath = 'flutter_native_splash-${_flavorHelper.flavor}.yaml';
+  } else if (flavor != null) {
+    filePath = 'flutter_native_splash-$flavor.yaml';
   } else if (File('flutter_native_splash.yaml').existsSync()) {
     filePath = 'flutter_native_splash.yaml';
   } else {
@@ -402,6 +416,7 @@ String? parseColor(dynamic color) {
 }
 
 class _Parameter {
+  static const appModule = 'app_module';
   static const android = 'android';
   static const android12Section = 'android_12';
   static const androidScreenOrientation = 'android_screen_orientation';
