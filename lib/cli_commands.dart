@@ -40,7 +40,7 @@ void createSplash({
   final config = getConfig(configFile: path, flavor: flavor);
   // It is important that the flavor setup occurs as soon as possible.
   // So before we generate anything, we need to setup the flavor (even if it's the default one).
-  _flavorHelper = _FlavorHelper(config[_Parameter.appModule] ?? '', flavor);
+  _flavorHelper = _FlavorHelper(config[_Parameter.appModule] ?? '', flavor, config[_Parameter.isProject] ?? true);
   createSplashByConfig(config);
 }
 
@@ -152,10 +152,11 @@ void createSplashByConfig(Map<String, dynamic> config) {
   if (!config.containsKey(_Parameter.android) ||
       config[_Parameter.android] as bool) {
     bool folderAndroidExist;
+    bool isProject = config.containsKey(_Parameter.isProject) ?? true;
     if (config.containsKey(_Parameter.appModule)) {
-      folderAndroidExist = Directory('../${config[_Parameter.appModule]}/android').existsSync();
+      folderAndroidExist = Directory('../${config[_Parameter.appModule]}/${isProject ? '' : '.'}android').existsSync();
     } else {
-      folderAndroidExist = Directory('android').existsSync();
+      folderAndroidExist = Directory('${isProject ? '' : '.'}android').existsSync();
     }
     if (folderAndroidExist) {
       _createAndroidSplash(
@@ -262,7 +263,7 @@ void removeSplash({
   final config = getConfig(configFile: path, flavor: flavor);
   // It is important that the flavor setup occurs as soon as possible.
   // So before we generate anything, we need to setup the flavor (even if it's the default one).
-  _flavorHelper = _FlavorHelper(config[_Parameter.appModule] ?? '', flavor);
+  _flavorHelper = _FlavorHelper(config[_Parameter.appModule] ?? '', flavor, config[_Parameter.isProject] ?? true);
   final removeConfig = <String, dynamic>{
     _Parameter.color: '#ffffff',
     _Parameter.darkColor: '#000000'
@@ -417,6 +418,7 @@ String? parseColor(dynamic color) {
 
 class _Parameter {
   static const appModule = 'app_module';
+  static const isProject = 'is_project';
   static const android = 'android';
   static const android12Section = 'android_12';
   static const androidScreenOrientation = 'android_screen_orientation';
